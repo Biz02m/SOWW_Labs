@@ -80,6 +80,8 @@ int main(int argc,char **argv) {
   if (myrank == 0)
   {
 
+    printf ("\nIM HERREEEEEEEEEEE\n");
+    fflush (stdout);
     int indexStart = 0;
     int indexEnd = 0;
     // first distribute some ranges to all slaves
