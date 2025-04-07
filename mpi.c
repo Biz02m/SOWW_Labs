@@ -127,7 +127,7 @@ int main(int argc,char **argv) {
     {
       MPI_Recv (&resulttemp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
       #ifdef DEBUG
-      printf ("\nMaster received result %f from process %d", resulttemp, status.MPI_SOURCE);
+      printf ("\nMaster received result %d from process %d", resulttemp, status.MPI_SOURCE);
       fflush (stdout);
       #endif
       result += resulttemp;
