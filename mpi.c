@@ -23,10 +23,10 @@ int isPrime(int n) {
     return 1;
 }
 
-int NumberOfPrimes(int start, int end) {
+int NumberOfPrimes(int* numbers, int start, int end) {
     int count = 0;
     for (int i = start; i < end; i++) {
-        if (isPrime(i)) {
+        if (isPrime(numbers[i])) {
             count++;
         }
     }
@@ -69,7 +69,7 @@ int main(int argc,char **argv) {
     return -1;
   }
 
-  if(!myrank){ //not used in this version
+  if(!myrank){
       	gettimeofday(&ins__tstart, NULL);
 	numbers = (unsigned long int*)malloc(inputArgument * sizeof(unsigned long int));
   	numgen(inputArgument, numbers);
@@ -151,7 +151,7 @@ int main(int argc,char **argv) {
           {
               MPI_Recv (range, 2, MPI_DOUBLE, 0, DATA, MPI_COMM_WORLD, &status);
               // compute my part
-              resulttemp = NumberOfPrimes (range[0], range[1]);
+              resulttemp = NumberOfPrimes (numbers, range[0], range[1]);
               // send the result back
               MPI_Send (&resulttemp, 1, MPI_DOUBLE, 0, RESULT, MPI_COMM_WORLD);
           }
