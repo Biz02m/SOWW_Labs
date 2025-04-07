@@ -9,9 +9,9 @@
 #define DATA 0
 #define RESULT 1
 #define FINISH 2
+#define DEBUG
 
-// This is the version where the input argument is the number to which we check how many prime numbers are within range
-// of (2, input)
+// In this version we actually pass a table as an argument
 
 int isPrime(int n) {
     if (n < 2) return 0;
@@ -41,7 +41,7 @@ int main(int argc,char **argv) {
   struct timeval ins__tstart, ins__tstop;
 
   int myrank,nproc;
-  unsigned long int *numbers; //not used in this version
+  unsigned long int *numbers;
   int a = 2, b = inputArgument;
   int result = 0, resulttemp;
   int range[RANGESIZE];
@@ -86,10 +86,8 @@ int main(int argc,char **argv) {
     // first distribute some ranges to all slaves
     for (int i = 1; i < nproc; i++)
     {
-      while(indexStart < RANGESIZE * i){
-          printf ("\niteration %d, to %d\n", indexStart, RANGESIZE * (i + 1));
-          fflush (stdout);
-        range[indexStart] = numbers[indexStart];
+      for(int j = 0; j < RANGESIZE; j++){
+        range[j] = numbers[indexStart];
         indexStart++;
       }
       #ifdef DEBUG
@@ -114,17 +112,17 @@ int main(int argc,char **argv) {
 
       // check the sender and send some more data
       indexEnd = indexStart + RANGESIZE;
-      if(indexEnd > RANGESIZE){
+      if(indexEnd > inputArgument){
         indexEnd = inputArgument;
       }
 
-      for (; indexStart < indexEnd; ){
-        range[indexStart] = numbers[indexStart];
+      for(int i = 0; i < RANGESIZE; i++){
+        range[i] = numbers[indexStart];
         indexStart++;
       }
 
       #ifdef DEBUG
-      printf ("\nMaster sending range %d,%d to process %d", range[0], range[1], status.MPI_SOURCE);
+      printf ("\nMaster sending range %d,%d to process %d", indexStart - RANGESIZE, indexStart, status.MPI_SOURCE);
       fflush (stdout);
       #endif
 
