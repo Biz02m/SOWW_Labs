@@ -83,10 +83,10 @@ int main(int argc,char **argv) {
     int indexStart = 0;
     int indexEnd = 0;
     // first distribute some ranges to all slaves
-    for (i = 1; i < nproc; i++)
+    for (int i = 1; i < nproc; i++)
     {
       for (; indexStart < RANGESIZE * (i + 1); ){
-        range[indexStart] = numbers[index];
+        range[indexStart] = numbers[indexStart];
         indexStart++;
       }
       #ifdef DEBUG
@@ -115,7 +115,7 @@ int main(int argc,char **argv) {
         indexEnd = inputArgument;
       }
 
-      for (; indexStart < indexEnd; ); ){
+      for (; indexStart < indexEnd; ){
         range[indexStart] = numbers[indexStart];
         indexStart++;
       }
