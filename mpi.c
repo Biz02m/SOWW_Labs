@@ -56,12 +56,18 @@ int main(int argc,char **argv) {
   // and the number of processes
   MPI_Comm_size(MPI_COMM_WORLD,&nproc);
 
-    if (nproc < 2)
-    {
-        printf ("Run with at least 2 processes");
-        MPI_Finalize ();
-        return -1;
-    }
+  if (nproc < 2)
+  {
+    printf ("Run with at least 2 processes");
+    MPI_Finalize ();
+    return -1;
+  }
+
+  if (((b - a) / RANGESIZE) < 2 * (nproc - 1)) {
+    printf("More subranges needed\n");
+    MPI_Finalize();
+    return -1;
+  }
 
   if(!myrank){ //not used in this version
       	gettimeofday(&ins__tstart, NULL);
