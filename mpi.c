@@ -80,14 +80,15 @@ int main(int argc,char **argv) {
   if (myrank == 0)
   {
 
-    printf ("\nIM HERREEEEEEEEEEE\n");
-    fflush (stdout);
+
     int indexStart = 0;
     int indexEnd = 0;
     // first distribute some ranges to all slaves
     for (int i = 1; i < nproc; i++)
     {
       for (; indexStart < RANGESIZE * (i + 1); ){
+          printf ("\nIM HERREEEEEEEEEEE\n");
+          fflush (stdout);
         range[indexStart] = numbers[indexStart];
         indexStart++;
       }
