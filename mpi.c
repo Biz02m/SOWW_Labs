@@ -42,8 +42,8 @@ int main(int argc,char **argv) {
 
   int myrank,nproc;
   unsigned long int *numbers; //not used in this version
-  int a = 2; b = inputArgument;
-  int result = 0; resultTemp;
+  int a = 2, b = inputArgument;
+  int result = 0, resultTemp;
   int range[2];
   int sentcount=0;
   int i;
@@ -76,7 +76,7 @@ int main(int argc,char **argv) {
   {
     range[0] = a;
     // first distribute some ranges to all slaves
-    for (i = 1; i < proccount; i++)
+    for (i = 1; i < nproc; i++)
     {
       range[1] = range[0] + RANGESIZE;
       #ifdef DEBUG
