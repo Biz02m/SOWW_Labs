@@ -80,7 +80,7 @@ int main(int argc,char **argv) {
     {
       range[1] = range[0] + RANGESIZE;
       #ifdef DEBUG
-      printf ("\nMaster sending range %f,%f to process %d", range[0], range[1], i);
+      printf ("\nMaster sending range %d,%d to process %d", range[0], range[1], i);
       fflush (stdout);
       #endif
       // send it to process i
@@ -96,7 +96,7 @@ int main(int argc,char **argv) {
       result += resulttemp;
 
       #ifdef DEBUG
-      printf ("\nMaster received result %f from process %d", resulttemp, status.MPI_SOURCE);
+      printf ("\nMaster received result %d from process %d", resulttemp, status.MPI_SOURCE);
       fflush (stdout);
       #endif
 
@@ -106,7 +106,7 @@ int main(int argc,char **argv) {
         range[1] = b;
 
       #ifdef DEBUG
-      printf ("\nMaster sending range %f,%f to process %d", range[0], range[1], status.MPI_SOURCE);
+      printf ("\nMaster sending range %d,%d to process %d", range[0], range[1], status.MPI_SOURCE);
       fflush (stdout);
       #endif
 
@@ -117,7 +117,7 @@ int main(int argc,char **argv) {
 
 
     // now receive results from the processes
-    for (i = 0; i < (proccount - 1); i++)
+    for (i = 0; i < (nproc - 1); i++)
     {
       MPI_Recv (&resulttemp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
       #ifdef DEBUG
@@ -132,7 +132,7 @@ int main(int argc,char **argv) {
       MPI_Send (NULL, 0, MPI_DOUBLE, i, FINISH, MPI_COMM_WORLD);
     }
     // now display the result
-    printf ("\nHi, I am process 0, the result is %f\n", result);
+    printf ("\nHi, I am process 0, the result is %d\n", result);
   }
   //slave doing all the hard work
   else
