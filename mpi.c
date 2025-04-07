@@ -43,7 +43,7 @@ int main(int argc,char **argv) {
   int myrank,nproc;
   unsigned long int *numbers; //not used in this version
   int a = 2, b = inputArgument;
-  int result = 0, resultTemp;
+  int result = 0, resulttemp;
   int range[2];
   int sentcount=0;
   int i;
@@ -127,7 +127,7 @@ int main(int argc,char **argv) {
       result += resulttemp;
     }
         // shut down the slaves
-    for (i = 1; i < proccount; i++)
+    for (i = 1; i < nproc; i++)
     {
       MPI_Send (NULL, 0, MPI_DOUBLE, i, FINISH, MPI_COMM_WORLD);
     }
