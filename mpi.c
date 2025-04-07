@@ -86,7 +86,7 @@ int main(int argc,char **argv) {
     // first distribute some ranges to all slaves
     for (int i = 1; i < nproc; i++)
     {
-      for (; indexStart < RANGESIZE * (i + 1); ){
+      while(indexStart < RANGESIZE * i){
           printf ("\niteration %d, to %d\n", indexStart, RANGESIZE * (i + 1));
           fflush (stdout);
         range[indexStart] = numbers[indexStart];
