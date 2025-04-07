@@ -141,7 +141,7 @@ int main(int argc,char **argv) {
       result += resulttemp;
     }
         // shut down the slaves
-    for (i = 1; i < nproc; i++)
+    for (int i = 1; i < nproc; i++)
     {
       MPI_Send (NULL, 0, MPI_DOUBLE, i, FINISH, MPI_COMM_WORLD);
     }
