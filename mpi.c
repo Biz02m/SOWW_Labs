@@ -131,7 +131,7 @@ int main(int argc,char **argv) {
 
 
     // now receive results from the processes
-    for (i = 0; i < (nproc - 1); i++)
+    for (int i = 0; i < (nproc - 1); i++)
     {
       MPI_Recv (&resulttemp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
       #ifdef DEBUG
