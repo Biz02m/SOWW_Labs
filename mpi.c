@@ -65,7 +65,7 @@ int main(int argc,char **argv) {
     int indexToSend = 0;
     unsigned long int result = 0;
 
-    requests = (MPI_Request *) malloc (3 * (proccount - 1) * sizeof (MPI_Request));
+    requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof (MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
 
     if (!requests || !resulttemp)
@@ -75,14 +75,14 @@ int main(int argc,char **argv) {
 	    return -1;
 	  }
 
-    // the first proccount requests will be for receiving, the latter ones for sending
+    // the first nproc requests will be for receiving, the latter ones for sending
     // MEANING - each slave gets a pair of communication handles (in view of master): receiving results, sending data
     // in addition we also have space for sending finish signals. 
     // for example for 3 slaves:
     // 0..2 - receiving
     // 3..5 - sending
     // 6..8 - finish signal sending  
-	  for (i = 0; i < 2 * (proccount - 1); i++){
+	  for (i = 0; i < 2 * (nproc - 1); i++){
       requests[i] = MPI_REQUEST_NULL;	// none active at this point
     }
       
@@ -90,19 +90,124 @@ int main(int argc,char **argv) {
     // start sending some stuff to be processed any means necessary
     for (int i = 0; i < nproc; i++){
       #ifdef DEBUG
-	    printf ("\nMaster sending number: %d to process %d", numbers[indexToSend], i);
+	    printf ("\nMaster sending number: %lu to process %d", numbers[indexToSend], i);
 	    fflush (stdout);
       #endif
       MPI_Send(&numbers[indexToSend], 1, MPI_UNSIGNED_LONG, i, DATA, MPI_COMM_WORLD);
       indexToSend++;
     }
 
+    // start receiving for results from the slaves
+	  for (i = 1; i < nproc; i++){
+      MPI_Irecv (&(resulttemp[i - 1]), 1, MPI_UNSIGNED_LONG, i, RESULT, MPI_COMM_WORLD, &(requests[i - 1]));
+    }
+    
+	  // start sending new data parts to the slaves by nonblocking functions
+	  for (i = 1; i < nproc; i++)
+	  {
+      #ifdef DEBUG
+	    printf ("\nMaster sending number: %lu to process %d", numbers[indexToSend], i);
+	    fflush (stdout);
+      #endif
+	    // send it to process i
+	    MPI_Isend (&(numbers[indexToSend]), 1, MPI_UNSIGNED_LONG, i, DATA, MPI_COMM_WORLD, &(requests[nproc - 2 + i]));
+      indexToSend++;
+	  }
 
+    //main loop of communication
+    while(indexToSend < inputArgument){
+      // wait if any communications (sending or receiving) handler has finished work
+      // requestscompleted will contain the value of index of requests table of the request that has been finished
+      // something like that
+      MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
+
+      if (requestCompleted < (nproc - 1)){
+        result += resulttemp[requestCompleted];
+
+        #ifdef DEBUG
+		    printf ("\nMaster received result %lu from process %d", resulttemp[requestcompleted], requestcompleted + 1);
+		    fflush (stdout);
+        #endif
+        
+        // wait till the sending to that process has finished
+        MPI_Wait (&(requests[nproc - 1 + requestCompleted]), MPI_STATUS_IGNORE);
+
+        #ifdef DEBUG
+		    printf ("\nMaster sending number %lu to process %d", numbers[indexToSend], requestcompleted + 1);
+		    fflush (stdout);
+        #endif
+        //send new data to slave
+        MPI_Isend (&(numbers[indexToSend]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
+        indexToSend++;
+
+        //issue a new handle for receiving that result
+        MPI_Irecv (&(resulttemp[requestcompleted]), 1, MPI_UNSIGNED_LONG, requestcompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestcompleted]));
+      }
+
+      // stop slaves
+      unsigned long int meaninglesValue = -1;
+      for (int i = 1; i < nproc; i++){
+        MPI_Isend(&meaninglesValue, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[2 * nproc - 3 + i]));
+      }
+      
+      // wait for all processes to finish
+      MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
+
+      //sum up what is saved in receiving buffor
+      for(int i = 0; i < (nproc - 1); i++) //sum last irecv results
+		  {
+			  result += resulttemp[i];
+		  }
+
+      // sum up last incoming messages
+      for(int i = 0; i < (nproc - 1); i++) //sum last irecv results
+		  {
+        MPI_Recv(&(resulttemp[i]), 1, MPI_UNSIGNED_LONG, i + 1, RESULT, MPI_COMM_WORLD, &status);
+			  result += resulttemp[i];
+		  }
+
+      printf ("\nHi, I am process 0, the result is %lu\n", result);
+      fflush(stdout)
+    }
 
   }
   //SLAVE 
   else{
+    requests = (MPI_Request *) malloc (2 * sizeof (MPI_Request));
+    resulttemp = (int *) malloc (sizeof (int));
 
+    if(!requests || !resulttemp ){
+      printf ("\nNot enough memory");
+	    MPI_Finalize ();
+	    return -1;
+    }
+
+    requests[0] = requests[1] = MPI_REQUEST_NULL;
+
+    unsigned long int numberToProcess;
+    // first receive the initial data
+    MPI_Recv (&numberToProcess, 1, MPI_UNSIGNED_LONG, 0, DATA, MPI_COMM_WORLD, &status);
+    #ifdef DEBUG
+    printf ("\nSlave received number %lu", numberToProcess);
+    fflush (stdout);
+    #endif
+
+    // keep receiving untill you get a finishing signal from master
+    while(status.MPI_TAG != FINISH){
+      //before computing your data, start receiving next
+      MPI_Irecv (&numberToProcess, 1, MPI_UNSIGNED_LONG, 0, DATA, MPI_COMM_WORLD, &(requests[0]));
+      resulttemp[0] = isPrime(numberToProcess);
+
+      // couldnt do waitall because we care about the status 
+      MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE);
+			MPI_Wait(&(requests[0]), &status);
+
+
+      MPI_Isend(&resulttemp[0], 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
+    }
+
+    //wait for last send
+    MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE); 
   }
 
   // synchronize/finalize your computations
