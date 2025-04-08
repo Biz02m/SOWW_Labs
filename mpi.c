@@ -41,7 +41,7 @@ int main(int argc,char **argv) {
   struct timeval ins__tstart, ins__tstop;
 
   int myrank,nproc;
-  unsigned long int *numbers;
+  int *numbers;
   int a = 2, b = inputArgument;
   int result = 0, resulttemp;
   int range[RANGESIZE];
@@ -70,8 +70,11 @@ int main(int argc,char **argv) {
 
   if(!myrank){
       	gettimeofday(&ins__tstart, NULL);
-	numbers = (unsigned long int*)malloc(inputArgument * sizeof(unsigned long int));
-  	numgen(inputArgument, numbers);
+	numbers = (int*)malloc(inputArgument * sizeof(unsigned long int));
+  	//numgen(inputArgument, numbers);
+    for(int i = 0; i < inputArgument; i++){
+      numbers[i] = i;
+    }
   }
 
   // run your computations here (including MPI communication)
@@ -79,30 +82,24 @@ int main(int argc,char **argv) {
   // now the master will distribute the data and slave processes will perform computations
   if (myrank == 0)
   {
-
-
     int indexStart = 0;
-    int indexEnd = 0;
     // first distribute some ranges to all slaves
     for (int i = 1; i < nproc; i++)
     {
-      for(int j = 0; j < RANGESIZE; j++){
-        range[j] = numbers[indexStart];
-        indexStart++;
-      }
       #ifdef DEBUG
-      printf ("\nMaster sending range %d,%d to process %d", indexStart - RANGESIZE, indexStart, i);
+      printf ("\nMaster sending range %d,%d to process %d", indexStart, indexStart + RANGESIZE, i);
       fflush (stdout);
       #endif
       // send it to process i
-      MPI_Send (range, RANGESIZE, MPI_INT, i, DATA, MPI_COMM_WORLD);
+      MPI_Send (&(numbers[indexStart]), RANGESIZE, MPI_INT, i, DATA, MPI_COMM_WORLD);
+      indexStart += RANGESIZE;
       sentcount++;
     }
 
     do
     {
       // distribute remaining subranges to the processes which have completed their parts
-      MPI_Recv (&resulttemp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
+      MPI_Recv (&resulttemp, 1, MPI_INT, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
       result += resulttemp;
 
       #ifdef DEBUG
@@ -111,30 +108,26 @@ int main(int argc,char **argv) {
       #endif
 
       // check the sender and send some more data
-      indexEnd = indexStart + RANGESIZE;
-      if(indexEnd > inputArgument){
-        indexEnd = inputArgument;
-      }
-
-      for(int i = 0; i < RANGESIZE; i++){
-        range[i] = numbers[indexStart];
-        indexStart++;
-      }
 
       #ifdef DEBUG
-      printf ("\nMaster sending range %d,%d to process %d", indexStart - RANGESIZE, indexStart, status.MPI_SOURCE);
+      printf ("\nMaster sending range %d,%d to process %d", indexStart, indexStart + RANGESIZE, status.MPI_SOURCE);
       fflush (stdout);
       #endif
 
-      MPI_Send (range, RANGESIZE, MPI_DOUBLE, status.MPI_SOURCE, DATA, MPI_COMM_WORLD);
+      int sizeOfBatch = RANGESIZE;
+      if (indexStart + sizeOfBatch > inputArgument){
+        sizeOfBatch = inputArgument - indexStart; 
+      }
+      MPI_Send (&(numbers[indexStart]), RANGESIZE, MPI_INT, status.MPI_SOURCE, DATA, MPI_COMM_WORLD);
+      indexStart += RANGESIZE;
     }
-    while (indexEnd < inputArgument);
+    while (indexStart < inputArgument);
 
 
     // now receive results from the processes
     for (int i = 0; i < (nproc - 1); i++)
     {
-      MPI_Recv (&resulttemp, 1, MPI_DOUBLE, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
+      MPI_Recv (&resulttemp, 1, MPI_INT, MPI_ANY_SOURCE, RESULT, MPI_COMM_WORLD, &status);
       #ifdef DEBUG
       printf ("\nMaster received result %d from process %d", resulttemp, status.MPI_SOURCE);
       fflush (stdout);
@@ -158,11 +151,18 @@ int main(int argc,char **argv) {
 
           if (status.MPI_TAG == DATA)
           {
-              MPI_Recv (range, RANGESIZE, MPI_DOUBLE, 0, DATA, MPI_COMM_WORLD, &status);
+              MPI_Recv (range, RANGESIZE, MPI_INT, 0, DATA, MPI_COMM_WORLD, &status);
+              #ifdef DEBUG
+              printf("Slave: %d recieved batch: (", myrank);
+              for(int i = 0 ; i < RANGESIZE; i++){
+                printf("%d,",range[i]);
+              }
+              printf(")\n");
+              #endif
               // compute my part
               resulttemp = NumberOfPrimes(range);
               // send the result back
-              MPI_Send (&resulttemp, 1, MPI_DOUBLE, 0, RESULT, MPI_COMM_WORLD);
+              MPI_Send (&resulttemp, 1, MPI_INT, 0, RESULT, MPI_COMM_WORLD);
           }
       }
       while (status.MPI_TAG != FINISH);
