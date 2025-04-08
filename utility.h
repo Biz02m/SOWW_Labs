@@ -8,24 +8,22 @@
 
 typedef struct InputArgs
 {
-  int start;
-  int stop;
+  long arg;
   char marker[64];
 } Args;
 
 void parseArgs(Args* aptr, int* argc, char** argv)
 {
-  if (*argc < 4)
+  if (*argc < 3)
   {
-    fprintf(stderr, "[Error] To few arguments!\nUsage:\n%s [start] [stop] [marker]\n", argv[0]);
+    fprintf(stderr, "[Error] To few arguments!\nUsage:\n%s [a] [marker]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
   else
   {
-    aptr->start = atoi(argv[1]);
-    aptr->stop = atoi(argv[2]);
+    aptr->arg = atoll(argv[1]);
     memset((aptr->marker), 0, 64);
-    strncpy((aptr->marker), argv[3], 63);
+    strncpy((aptr->marker), argv[2], 63);
   }
   *argc = 1;
   return;
