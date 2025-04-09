@@ -12,7 +12,7 @@
 #define DEBUG
 #define FEED 4
 
-int isPrime(int n) {
+int isPrime(unsigned long int n) {
   if (n < 2) return 0;
   if (n == 2) return 1;
   if (n % 2 == 0) return 0;
@@ -22,7 +22,7 @@ int isPrime(int n) {
   return 1;
 }
 
-int NumberOfPrimes(int* range) {
+int NumberOfPrimes(unsigned long int* range) {
   int count = 0;
   for (int i = 0; i < BATCHSIZE; i++) {
       if (isPrime(range[i])) {
@@ -77,6 +77,7 @@ int main(int argc,char **argv) {
   MPI_Request *requests;
   MPI_Status status;
 	int *resulttemp;
+  unsigned long int result = 0; 
   if(myrank == 0 ){
     int counter = 0;
     int indexToSend = 0; 
@@ -133,7 +134,7 @@ int main(int argc,char **argv) {
         counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
         
         // czekamy az zwolni sie kanal do komunikacji
-        MPI_Wait (&(requests[nproc - 1 + requestcompleted]), MPI_STATUS_IGNORE);
+        MPI_Wait (&(requests[nproc - 1 + requestCompleted]), MPI_STATUS_IGNORE);
         #ifdef DEBUG
         printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE);
         fflush(stdout);
@@ -175,7 +176,7 @@ int main(int argc,char **argv) {
 		requests[0] = requests[1] = MPI_REQUEST_NULL;
 		resulttemp = (int *) malloc(sizeof(int));
     unsigned long int* batch;
-    batch = (unsigned long int *) malloc(BATCHSIZE * (unsigned long int));
+    batch = (unsigned long int *) malloc(BATCHSIZE * sizeof(unsigned long int));
 
     if(!requests || !resulttemp || !batch){
       printf ("\nNot enough memory");
