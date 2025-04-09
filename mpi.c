@@ -24,7 +24,7 @@ int isPrime(int n) {
 
 int NumberOfPrimes(int* range) {
   int count = 0;
-  for (int i = 0; i < RANGESIZE; i++) {
+  for (int i = 0; i < BATCHSIZE; i++) {
       if (isPrime(range[i])) {
           count++;
       }
@@ -74,13 +74,13 @@ int main(int argc,char **argv) {
   //  wiemy ile paczek musimy zebrac za pomoca tego licznika
 
   //MASTER
+  MPI_Request *requests;
+  MPI_Status status;
+	int *resulttemp;
   if(myrank == 0 ){
-    MPI_Request *requests;
-    MPI_Status status;
     int counter = 0;
-	  int requestCompleted;
-	  int *resulttemp;
     int indexToSend = 0; 
+    int requestCompleted;
 
     requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof (MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
@@ -91,7 +91,7 @@ int main(int argc,char **argv) {
 	    return -1;
 	  }
 
-	  for (i = 0; i < 2 * (nproc - 1); i++){
+	  for (int i = 0; i < 2 * (nproc - 1); i++){
       requests[i] = MPI_REQUEST_NULL;	// none active at this point
     }
 
@@ -126,7 +126,7 @@ int main(int argc,char **argv) {
     }
 
     while(indexToSend < inputArgument){
-      MPI_Waitany (2 * nproc - 2, requests, &requestcompleted, MPI_STATUS_IGNORE);
+      MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
 
       if(requestCompleted < (nproc - 1)){
         result += resulttemp[requestCompleted];
