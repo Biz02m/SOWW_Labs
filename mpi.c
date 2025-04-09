@@ -136,7 +136,7 @@ int main(int argc,char **argv) {
         // czekamy az zwolni sie kanal do komunikacji
         MPI_Wait (&(requests[nproc - 1 + requestCompleted]), MPI_STATUS_IGNORE);
         #ifdef DEBUG
-        printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE);
+        printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, requestCompleted + 1);
         fflush(stdout);
         #endif
 
