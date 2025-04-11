@@ -56,7 +56,7 @@ int main(int argc,char **argv) {
       	gettimeofday(&ins__tstart, NULL);
 	numbers = (unsigned long int*)malloc(inputArgument * sizeof(unsigned long int));
   	//numgen(inputArgument, numbers);
-    for(int i = 0; i < BATCHSIZE; i++){
+    for(int i = 0; i < inputArgument; i++){
       numbers[i] = i;
     }
   }
