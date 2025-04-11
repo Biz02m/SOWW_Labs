@@ -98,7 +98,7 @@ int main(int argc,char **argv) {
     }
 
     //przekarmienie slaveow
-    bool overfed = false;
+    int overfed = 0;
     for(int i = 0; i < FEED; i++){
       for(int j = 1 ; j < nproc; j++){
         #ifdef DEBUG
@@ -108,7 +108,7 @@ int main(int argc,char **argv) {
 
         customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument : BATCHSIZE;
         if(customBatchSize != BATCHSIZE){
-          overfed = true;
+          overfed = 1;
           break;
         }
 
