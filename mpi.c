@@ -256,6 +256,7 @@ int main(int argc,char **argv) {
 			MPI_Isend(&resulttemp, 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
 		}
 
+    printf("Slave:%d is stopping\n",myrank);
 		MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE); //wait for last send
     
   }
