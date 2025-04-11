@@ -129,7 +129,7 @@ int main(int argc,char **argv) {
         }
         
         #ifdef DEBUG
-        printf("Master sending overfeeding batch (");
+        printf("Master sending overfeeding batch at address:%d (", &(numbers[indexToSend]) );
         for(int k = indexToSend; k < indexToSend + BATCHSIZE; k++){
           printf("%lu,",numbers[k]);
         }
@@ -155,7 +155,7 @@ int main(int argc,char **argv) {
     for(int i = 1; i < nproc; i++){
       //trzeba sprawdzic czy nie wysylamy za duzo 
       if(overfed = 1){
-        printf("Master nie ma juz roboty, nie wysyla\n");
+        printf("Master has no work left to send, sleeping\n");
         break;
       }
 
@@ -232,9 +232,10 @@ int main(int argc,char **argv) {
 		{
 			MPI_Irecv(&batch, BATCHSIZE, MPI_UNSIGNED_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &(requests[0]));
       #ifdef DEBUG
+      print("Slave:%d received batch at address: %d", myrank, batch);
       printf("Slave:%d recieved batch to process: (",myrank);
       for(int i = 0; i < BATCHSIZE; i++){
-        printf("%lu,",batch[i]);
+        printf("%lu,", batch[i]);
       }
       printf(")\n");
       fflush(stdout);
@@ -246,6 +247,9 @@ int main(int argc,char **argv) {
 			MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE);
 			MPI_Wait(&(requests[0]), &status);
 
+      #ifdef DEBUG
+      printf("Slave:%d sending result: %d", myrank, resulttemp);
+      #endif
 			MPI_Isend(&resulttemp, 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
 		}
 
