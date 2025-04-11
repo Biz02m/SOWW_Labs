@@ -98,7 +98,7 @@ int main(int argc,char **argv) {
 
     //przekarmienie slaveow
     for(int i = 0; i < FEED; i++){
-      for(int j = 0 ; j < (nproc - 1); j++){
+      for(int j = 1 ; j < nproc; j++){
         #ifdef DEBUG
         printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, j);
         fflush(stdout);
@@ -174,11 +174,11 @@ int main(int argc,char **argv) {
   else { //-----------SLAVE-----------
     requests = (MPI_Request *) malloc(2 * sizeof (MPI_Request));
 		requests[0] = requests[1] = MPI_REQUEST_NULL;
-		resulttemp = (int *) malloc(sizeof(int));
+		resulttemp;
     unsigned long int* batch;
     batch = (unsigned long int *) malloc(BATCHSIZE * sizeof(unsigned long int));
 
-    if(!requests || !resulttemp || !batch){
+    if(!requests || !batch){
       printf ("\nNot enough memory");
 	    MPI_Finalize ();
 	    return -1;
@@ -197,12 +197,12 @@ int main(int argc,char **argv) {
       #endif
 
       // przeprocesuj paczke
-      resulttemp[0] = NumberOfPrimes(batch);
+      resulttemp = NumberOfPrimes(batch);
 
 			MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE);
 			MPI_Wait(&(requests[0]), &status);
 
-			MPI_Isend(&resulttemp[0], 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
+			MPI_Isend(&resulttemp, 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
 		}
 
 		MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE); //wait for last send
