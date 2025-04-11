@@ -97,7 +97,7 @@ int main(int argc,char **argv) {
     }
 
     //przekarmienie slaveow
-    int overfed = 0;
+    int overfed = 0; //flaga sprawdzajaca czy doszlo juz do wyczerpania danych
     for(int i = 0; i < FEED; i++){
       for(int j = 1 ; j < nproc; j++){
 
@@ -113,14 +113,14 @@ int main(int argc,char **argv) {
             }
             //wypelnij reszte zerami
             for(int k = remaining; k < BATCHSIZE; k++){
-              lastBatch[k] = -1;
+              lastBatch[k] = 0;
             }
             
             printf("Master has some work left to do, sending last batch: (");
             for(int k = 0; k < BATCHSIZE; k++){
               printf("%lu,",lastBatch[k]);
             }
-            printf(") to process: %d", j);
+            printf(") to process: %d\n", j);
             
             MPI_Send(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
             overfed = 1;
@@ -154,6 +154,10 @@ int main(int argc,char **argv) {
     // odpalamy wysylke 
     for(int i = 1; i < nproc; i++){
       //trzeba sprawdzic czy nie wysylamy za duzo 
+      if(overfed = 1){
+        printf("Master nie ma juz roboty, nie wysyla\n");
+        break;
+      }
 
       #ifdef DEBUG
       printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, i);
