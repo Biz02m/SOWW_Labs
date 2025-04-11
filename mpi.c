@@ -102,7 +102,7 @@ int main(int argc,char **argv) {
     for(int i = 0; i < FEED; i++){
       for(int j = 1 ; j < nproc; j++){
         #ifdef DEBUG
-        printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, j);
+        printf("Master sending overfeeding batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, j);
         fflush(stdout);
         #endif
 
@@ -112,7 +112,7 @@ int main(int argc,char **argv) {
           break;
         }
 
-        MPI_Send(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
+        MPI_Send(&(numbers[indexToSend]), customBatchSize, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
         indexToSend += BATCHSIZE;
         counter++;
       }
