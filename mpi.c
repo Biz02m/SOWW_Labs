@@ -82,6 +82,7 @@ int main(int argc,char **argv) {
     int counter = 0;
     int indexToSend = 0; 
     int requestCompleted;
+    int customBatchSize = BATCHSIZE;
 
     requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof (MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
@@ -97,6 +98,7 @@ int main(int argc,char **argv) {
     }
 
     //przekarmienie slaveow
+    bool overfed = false;
     for(int i = 0; i < FEED; i++){
       for(int j = 1 ; j < nproc; j++){
         #ifdef DEBUG
@@ -104,9 +106,18 @@ int main(int argc,char **argv) {
         fflush(stdout);
         #endif
 
+        customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument : BATCHSIZE;
+        if(customBatchSize != BATCHSIZE){
+          overfed = true;
+          break;
+        }
+
         MPI_Send(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
         indexToSend += BATCHSIZE;
         counter++;
+      }
+      if(overfed){
+        break;
       }
     }
 
@@ -139,11 +150,9 @@ int main(int argc,char **argv) {
         printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, requestCompleted + 1);
         fflush(stdout);
         #endif
+        
+        customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument : BATCHSIZE;
 
-        int customBatchSize = BATCHSIZE;
-        if(indexToSend + BATCHSIZE > inputArgument){
-          customBatchSize = inputArgument;
-        }
         MPI_Isend(&(numbers[indexToSend]), customBatchSize, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
 				indexToSend += BATCHSIZE;
         counter++;
