@@ -100,7 +100,7 @@ int main(int argc,char **argv) {
     int overfed = 0;
     for(int i = 0; i < FEED; i++){
       for(int j = 1 ; j < nproc; j++){
-        
+
         //trzeba sprawdzic czy nie wysylamy za duzo
         if(indexToSend + BATCHSIZE > inputArgument){
           printf("Master ran out of work during overfeeding\n");
@@ -109,7 +109,7 @@ int main(int argc,char **argv) {
             unsigned long int* lastBatch = (unsigned long int*) malloc((remaining)*sizeof(unsigned long int));
             //skopiuj pozostale dane
             for(int k = 0; k < remaining; k++, indexToSend++){
-              lastBatch[k] = numbers[indexToSend]
+              lastBatch[k] = numbers[indexToSend];
             }
             //wypelnij reszte zerami
             for(int k = remaining; k < BATCHSIZE; k++){
