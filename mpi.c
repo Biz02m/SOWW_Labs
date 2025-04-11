@@ -108,7 +108,11 @@ int main(int argc,char **argv) {
         }
         
         #ifdef DEBUG
-        printf("Master sending overfeeding batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, j);
+        printf("Master sending overfeeding batch (");
+        for(int i = indexToSend; i < customBatchSize; i++){
+          printf("%lu,",numbers[i]);
+        }
+        printf(") to process %d\n", j);
         fflush(stdout);
         #endif
 
