@@ -174,6 +174,9 @@ int main(int argc,char **argv) {
       if(requestCompleted < (nproc - 1)){
         result += resulttemp[requestCompleted];
         counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
+        #ifdef DEBUG
+        printf("Master recieved result:%d from slave:%d, current result: %d", resulttemp[requestCompleted], requestCompleted + 1, result);
+        #endif
         
         // czekamy az zwolni sie kanal do komunikacji
         MPI_Wait (&(requests[nproc - 1 + requestCompleted]), MPI_STATUS_IGNORE);
@@ -206,6 +209,7 @@ int main(int argc,char **argv) {
     // moze zsynchronizowac?
     MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
 
+    // odbierz rezultaty od slaveow
     while(counter>0){
       for(int i = 0; i < nproc - 1; i++){
         MPI_Recv(&(resulttemp[i]), 1, MPI_UNSIGNED_LONG, i + 1, RESULT, MPI_COMM_WORLD, &status);
@@ -213,7 +217,7 @@ int main(int argc,char **argv) {
         counter--;
       }
     }
-
+    printf("Master recieved all results from slaves, the result is: %d\n", result);
   }
   else { //-----------SLAVE-----------
     requests = (MPI_Request *) malloc(2 * sizeof (MPI_Request));
@@ -247,7 +251,7 @@ int main(int argc,char **argv) {
 			MPI_Wait(&(requests[0]), &status);
 
       #ifdef DEBUG
-      printf("Slave:%d sending result: %d", myrank, resulttemp);
+      printf("Slave:%d sending result: %d\n", myrank, resulttemp);
       #endif
 			MPI_Isend(&resulttemp, 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
 		}
