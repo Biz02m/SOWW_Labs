@@ -129,7 +129,7 @@ int main(int argc,char **argv) {
         }
         
         #ifdef DEBUG
-        printf("Master sending overfeeding batch at address:%lu (", &(numbers[indexToSend]) );
+        printf("Master sending overfeeding batch (");
         for(int k = indexToSend; k < indexToSend + BATCHSIZE; k++){
           printf("%lu,",numbers[k]);
         }
@@ -230,9 +230,8 @@ int main(int argc,char **argv) {
 
     while(status.MPI_TAG != FINISH) //keep sendiing/receiving until finish
 		{
-			MPI_Irecv(&batch, BATCHSIZE, MPI_UNSIGNED_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &(requests[0]));
+			MPI_Irecv(batch, BATCHSIZE, MPI_UNSIGNED_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &(requests[0]));
       #ifdef DEBUG
-      printf("Slave:%d received batch at address: %lu", myrank, batch);
       printf("Slave:%d recieved batch to process: (",myrank);
       for(int i = 0; i < BATCHSIZE; i++){
         printf("%lu,", batch[i]);
