@@ -76,9 +76,9 @@ int main(int argc,char **argv) {
   //MASTER
   MPI_Request *requests;
   MPI_Status status;
-	int *resulttemp;
   unsigned long int result = 0; 
   if(myrank == 0 ){
+	  int *resulttemp;
     int counter = 0;
     int indexToSend = 0; 
     int requestCompleted;
@@ -174,7 +174,7 @@ int main(int argc,char **argv) {
   else { //-----------SLAVE-----------
     requests = (MPI_Request *) malloc(2 * sizeof (MPI_Request));
 		requests[0] = requests[1] = MPI_REQUEST_NULL;
-		resulttemp;
+		int resulttemp;
     unsigned long int* batch;
     batch = (unsigned long int *) malloc(BATCHSIZE * sizeof(unsigned long int));
 
