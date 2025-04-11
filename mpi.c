@@ -140,7 +140,11 @@ int main(int argc,char **argv) {
         fflush(stdout);
         #endif
 
-        MPI_Isend(&numbers[indexToSend], BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
+        int customBatchSize = BATCHSIZE;
+        if(indexToSend + BATCHSIZE > inputArgument){
+          customBatchSize = inputArgument;
+        }
+        MPI_Isend(&(numbers[indexToSend]), customBatchSize, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
 				indexToSend += BATCHSIZE;
         counter++;
 
