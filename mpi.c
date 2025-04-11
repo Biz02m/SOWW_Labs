@@ -101,7 +101,7 @@ int main(int argc,char **argv) {
     int overfed = 0;
     for(int i = 0; i < FEED; i++){
       for(int j = 1 ; j < nproc; j++){
-        customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument : BATCHSIZE;
+        customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument - indexToSend : BATCHSIZE;
         if(customBatchSize != BATCHSIZE){
           overfed = 1;
           break;
@@ -109,7 +109,7 @@ int main(int argc,char **argv) {
         
         #ifdef DEBUG
         printf("Master sending overfeeding batch (");
-        for(int k = indexToSend; k < customBatchSize; k++){
+        for(int k = indexToSend; k < indexToSend + customBatchSize; k++){
           printf("%lu,",numbers[k]);
         }
         printf(") to process %d\n", j);
@@ -132,7 +132,7 @@ int main(int argc,char **argv) {
 
     // odpalamy wysylke 
     for(int i = 1; i < nproc; i++){
-      customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument : BATCHSIZE;
+      customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument - indexToSend  : BATCHSIZE;
       if(customBatchSize != BATCHSIZE){
         break;
       }
@@ -160,7 +160,7 @@ int main(int argc,char **argv) {
         fflush(stdout);
         #endif
         
-        customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument : BATCHSIZE;
+        customBatchSize = indexToSend + BATCHSIZE > inputArgument ? inputArgument - indexToSend  : BATCHSIZE;
 
         MPI_Isend(&(numbers[indexToSend]), customBatchSize, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
 				indexToSend += BATCHSIZE;
