@@ -124,12 +124,13 @@ int main(int argc,char **argv) {
               printf("%lu,",lastBatch[k]);
             }
             printf(") to process: %d\n", j);
-            
+
             MPI_Send(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
-            overfed = 1;
+            
             free(lastBatch);
-            break;
           }
+          overfed = 1;
+          break;
         }
         
         #ifdef DEBUG
