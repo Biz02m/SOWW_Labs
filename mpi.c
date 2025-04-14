@@ -85,11 +85,10 @@ int main(int argc,char **argv) {
     int requestCompleted;
     unsigned long int *lastBatch;
 
-    lastBatch = malloc((remaining) * sizeof(unsigned long int));
     requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof (MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
     
-    if (!requests || !resulttemp || !lastBatch){
+    if (!requests || !resulttemp){
       printf ("\nNot enough memory");
 	    MPI_Finalize ();
 	    return -1;
@@ -109,7 +108,7 @@ int main(int argc,char **argv) {
           printf("Master ran out of work during overfeeding\n");
           int remaining = inputArgument - indexToSend;
           if(remaining > 0){
-            unsigned long int* lastBatch = (unsigned long int*) malloc((remaining)*sizeof(unsigned long int));
+            lastBatch = (unsigned long int*) malloc((BATCHSIZE)*sizeof(unsigned long int));
             //skopiuj pozostale dane
             memcpy(lastBatch, &numbers[indexToSend], remaining * sizeof(unsigned long int));
             // for(int k = 0; k < remaining; k++, indexToSend++){
@@ -196,7 +195,7 @@ int main(int argc,char **argv) {
           printf("Master has last incomplete batch to send, padding will be used\n");
           #endif
           int remaining = inputArgument - indexToSend;
-          unsigned long int *lastBatch = malloc((remaining) * sizeof(unsigned long int));
+          lastBatch = malloc((BATCHSIZE) * sizeof(unsigned long int));
           memcpy(lastBatch, &numbers[indexToSend], remaining * sizeof(unsigned long int));
           memset(lastBatch + remaining, 0, (BATCHSIZE - remaining) * sizeof(unsigned long int));
           
