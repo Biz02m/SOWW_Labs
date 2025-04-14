@@ -179,7 +179,7 @@ int main(int argc,char **argv) {
         result += resulttemp[requestCompleted];
         counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
         #ifdef DEBUG
-        printf("Master recieved result:%d from slave:%d, current result: %d", resulttemp[requestCompleted], requestCompleted + 1, result);
+        printf("Master recieved result:%d from slave:%d, current result: %ld", resulttemp[requestCompleted], requestCompleted + 1, result);
         #endif
         
         // czekamy az zwolni sie kanal do komunikacji
@@ -236,7 +236,7 @@ int main(int argc,char **argv) {
         counter--;
       }
     }
-    printf("Master recieved all results from slaves, the result is: %d\n", result);
+    printf("Master recieved all results from slaves, the result is: %ld\n", result);
     free(requests);
     free(resulttemp);
 
@@ -246,7 +246,7 @@ int main(int argc,char **argv) {
     MPI_Status recv_status, send_status;
     int resulttemp;
     unsigned long int* batch = (unsigned long int *) malloc(BATCHSIZE * sizeof(unsigned long int));
-    int recv_ready = 0; send_ready = 1, finished = 0, recv_done = 0, send_done = 0;
+    int recv_ready = 0, send_ready = 1, finished = 0, recv_done = 0, send_done = 0;
     // recv_ready to flaga która mówi nam czy możemy odpalić znowu odbieranie Irecv. 
     // 0 oznacza że tak
     // 1 oznacza że jesteśmy w trakcie odbierania, czyli został odpalony i czekamy na przetworzenie tych danych
