@@ -180,7 +180,7 @@ int main(int argc,char **argv) {
         result += resulttemp[requestCompleted];
         counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
         #ifdef DEBUG
-        printf("Master recieved result:%d from slave:%d, current result: %ld", resulttemp[requestCompleted], requestCompleted + 1, result);
+        printf("Master recieved result:%d from slave:%d, current result: %ld\n", resulttemp[requestCompleted], requestCompleted + 1, result);
         #endif
         
         // czekamy az zwolni sie kanal do komunikacji
@@ -226,14 +226,18 @@ int main(int argc,char **argv) {
     }
 
     // moze zsynchronizowac?
-    MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
+    //MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
 
     // odbierz rezultaty od slaveow
     while(counter>0){
       //stare
-      for(int i = 0; i < nproc - 1; i++){
-        MPI_Recv(&(resulttemp[i]), 1, MPI_UNSIGNED_LONG, i + 1, RESULT, MPI_COMM_WORLD, &status);
-        result += resulttemp[i];
+      int endresulttemp;
+      for(int i = 1; i < nproc; i++){
+        MPI_Recv(&endresulttemp, 1, MPI_UNSIGNED_LONG, i, RESULT, MPI_COMM_WORLD, &status);
+        #ifdef DEBUG
+        printf("Master recieved last result:%ld from Slave:%d", endresulttemp, i);
+        #endif
+        result += endresulttemp;
         counter--;
       }
     }
@@ -278,6 +282,9 @@ int main(int argc,char **argv) {
           //zobacz czy dostales sygnal koniec
           if(recv_status.MPI_TAG == FINISH){
             finished = 1;
+            #ifdef DEBUG
+            printf("Slave:%d, recieved Finish signal, stopping work");
+            #endif
             break;
           }
 
