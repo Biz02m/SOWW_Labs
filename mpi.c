@@ -219,25 +219,29 @@ int main(int argc,char **argv) {
     fflush(stdout);
     #endif
 
-    // skonczyly sie dane do przetwarzania - trzeba wyslac sygnal do slaveow o tym
+    
+
+    // odbierz rezultaty od slaveow
+    while(counter>0){  
+      MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
+      if(requestCompleted < (nproc - 1)){
+        result += resulttemp[requestCompleted];
+        counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
+        #ifdef DEBUG
+        printf("Master recieved result:%d from slave:%d, current result:%ld, wating for %d requests results\n", resulttemp[requestCompleted], requestCompleted + 1, result, counter);
+        #endif
+        MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
+      }
+    }
+
+    MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
+
+    // wysyłamy sygnał stop do slaveow
     unsigned long int finishSignaltmp = 0;
     for(int i = 1; i < nproc; i++){
       MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[2 * nproc - 3 + i]));
     }
 
-    // moze zsynchronizowac?
-    //MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
-
-    // odbierz rezultaty od slaveow
-    while(counter>0){  
-      MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
-      result += resulttemp[requestCompleted];
-      counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
-      #ifdef DEBUG
-      printf("Master recieved result:%d from slave:%d, current result: %ld\n", resulttemp[requestCompleted], requestCompleted + 1, result);
-      #endif
-      MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
-    }
     printf("Master recieved all results from slaves, the result is: %ld\n", result);
     free(requests);
     free(resulttemp);
