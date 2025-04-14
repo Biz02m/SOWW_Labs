@@ -193,7 +193,7 @@ int main(int argc,char **argv) {
         //trzeba sprawdzic czy mozemy wyslac na pewno paczke o rozmiarze batchsize
         if(indexToSend + BATCHSIZE > inputArgument){
           #ifdef DEBUG
-          printf("Master has last incomplete batch to send, padding will be used");
+          printf("Master has last incomplete batch to send, padding will be used\n");
           #endif
           int remaining = inputArgument - indexToSend;
           unsigned long int *lastBatch = malloc((remaining) * sizeof(unsigned long int));
@@ -229,17 +229,14 @@ int main(int argc,char **argv) {
     //MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
 
     // odbierz rezultaty od slaveow
-    while(counter>0){
-      //stare
-      unsigned long int endresulttemp;
-      for(int i = 1; i < nproc; i++){
-        MPI_Recv(&endresulttemp, 1, MPI_UNSIGNED_LONG, i, RESULT, MPI_COMM_WORLD, &status);
-        #ifdef DEBUG
-        printf("Master recieved last result:%ld from Slave:%d", endresulttemp, i);
-        #endif
-        result += endresulttemp;
-        counter--;
-      }
+    while(counter>0){  
+      MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
+      result += resulttemp[requestCompleted];
+      counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
+      #ifdef DEBUG
+      printf("Master recieved result:%d from slave:%d, current result: %ld\n", resulttemp[requestCompleted], requestCompleted + 1, result);
+      #endif
+      MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
     }
     printf("Master recieved all results from slaves, the result is: %ld\n", result);
     free(requests);
@@ -283,7 +280,7 @@ int main(int argc,char **argv) {
           if(recv_status.MPI_TAG == FINISH){
             finished = 1;
             #ifdef DEBUG
-            printf("Slave:%d, recieved Finish signal, stopping work", myrank);
+            printf("Slave:%d, recieved Finish signal, stopping work\n", myrank);
             #endif
             break;
           }
