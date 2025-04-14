@@ -234,13 +234,16 @@ int main(int argc,char **argv) {
       }
     }
 
-    MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
+    //może redundantne?
+    MPI_Waitall(2 * nproc - 2, requests, MPI_STATUSES_IGNORE);
 
     // wysyłamy sygnał stop do slaveow
     unsigned long int finishSignaltmp = 0;
     for(int i = 1; i < nproc; i++){
-      MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[2 * nproc - 3 + i]));
+      MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[nproc - 1 + i]));
     }
+
+    MPI_Waitall(2 * nproc - 2, requests, MPI_STATUSES_IGNORE);
 
     printf("Master recieved all results from slaves, the result is: %ld\n", result);
     free(requests);
