@@ -229,7 +229,7 @@ int main(int argc,char **argv) {
         #ifdef DEBUG
         printf("Master recieved result:%d from slave:%d, current result:%ld, wating for %d requests results\n", resulttemp[requestCompleted], requestCompleted + 1, result, counter);
         #endif
-        if(counter > nproc - 1){
+        while(counter>0){        
           MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
         }
       }
@@ -240,6 +240,15 @@ int main(int argc,char **argv) {
     for(int i = 1; i < nproc; i++){
       MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[2 * (nproc - 1) + (i - 1)]));
     }
+
+    #ifdef DEBUG
+    int done;
+    for(int i = 0; i < 3*(nproc-1); i++){
+      done = 0;
+      MPI_Test(requests[i], &done, &status);
+      printf("handler%d status is: %d\n", i, done);
+    }
+    #endif
 
     MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
 
