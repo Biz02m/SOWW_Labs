@@ -231,7 +231,7 @@ int main(int argc,char **argv) {
     // odbierz rezultaty od slaveow
     while(counter>0){
       //stare
-      int endresulttemp;
+      unsigned long int endresulttemp;
       for(int i = 1; i < nproc; i++){
         MPI_Recv(&endresulttemp, 1, MPI_UNSIGNED_LONG, i, RESULT, MPI_COMM_WORLD, &status);
         #ifdef DEBUG
@@ -283,7 +283,7 @@ int main(int argc,char **argv) {
           if(recv_status.MPI_TAG == FINISH){
             finished = 1;
             #ifdef DEBUG
-            printf("Slave:%d, recieved Finish signal, stopping work");
+            printf("Slave:%d, recieved Finish signal, stopping work", myrank);
             #endif
             break;
           }
