@@ -83,11 +83,13 @@ int main(int argc,char **argv) {
     int counter = 0;
     int indexToSend = 0; 
     int requestCompleted;
+    unsigned long int *lastBatch;
 
+    lastBatch = malloc((remaining) * sizeof(unsigned long int));
     requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof (MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
     
-    if (!requests || !resulttemp){
+    if (!requests || !resulttemp || !lastBatch){
       printf ("\nNot enough memory");
 	    MPI_Finalize ();
 	    return -1;
@@ -126,8 +128,6 @@ int main(int argc,char **argv) {
             printf(") to process: %d\n", j);
 
             MPI_Send(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
-            
-            free(lastBatch);
           }
           overfed = 1;
           break;
@@ -203,7 +203,6 @@ int main(int argc,char **argv) {
           MPI_Isend(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
           MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
           counter++;
-          free(lastBatch);
           break;
         }
         MPI_Isend(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
@@ -224,31 +223,31 @@ int main(int argc,char **argv) {
     // odbierz rezultaty od slaveow
     while(counter>0){  
       MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
+
       if(requestCompleted < (nproc - 1)){
         result += resulttemp[requestCompleted];
         counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
         #ifdef DEBUG
         printf("Master recieved result:%d from slave:%d, current result:%ld, wating for %d requests results\n", resulttemp[requestCompleted], requestCompleted + 1, result, counter);
         #endif
-        MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
+        if(counter > nproc - 1){
+          MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
+        }
       }
     }
-
-    //może redundantne?
-    MPI_Waitall(2 * nproc - 2, requests, MPI_STATUSES_IGNORE);
 
     // wysyłamy sygnał stop do slaveow
     unsigned long int finishSignaltmp = 0;
     for(int i = 1; i < nproc; i++){
-      MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[nproc - 1 + i]));
+      MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(requests[2 * (nproc - 1) + (i - 1)]));
     }
 
-    MPI_Waitall(2 * nproc - 2, requests, MPI_STATUSES_IGNORE);
+    MPI_Waitall(3 * nproc - 3, requests, MPI_STATUSES_IGNORE);
 
     printf("Master recieved all results from slaves, the result is: %ld\n", result);
     free(requests);
     free(resulttemp);
-
+    free(lastBatch);
   }
   else { //-----------SLAVE-----------
     MPI_Request recv_req, send_req;
