@@ -225,13 +225,13 @@ int main(int argc,char **argv) {
 
       if(requestCompleted < (nproc - 1)){
         result += resulttemp[requestCompleted];
+        counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
         #ifdef DEBUG
         printf("Master recieved result:%d from slave:%d, current result:%ld, wating for %d requests results\n", resulttemp[requestCompleted], requestCompleted + 1, result, counter);
         #endif
         if(counter>0){        
           MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
         }
-        counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
       }
     }
 
