@@ -32,6 +32,14 @@ int NumberOfPrimes(unsigned long int* range) {
   return count;
 }
 
+int sumCounter(int * counter, int nproc){
+  int sum = 0;
+  for(int i = 0; i < nproc - 1; i++){
+    sum += counter[i];
+  }
+  return sum;
+}
+
 int main(int argc,char **argv) {
 
   Args ins__args;
@@ -80,12 +88,14 @@ int main(int argc,char **argv) {
     MPI_Request *requests;
     MPI_Status status;
 	  int *resulttemp;
-    int counter = 0;
+    int *counter;
     int indexToSend = 0; 
     int requestCompleted;
     unsigned long int *lastBatch;
 
-    requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof (MPI_Request));
+    counter = (int *) malloc((nproc - 1) * sizeof(int));
+    memset(counter, 0, (nproc -1 ) * sizeof(int));
+    requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof(MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
     
     if (!requests || !resulttemp){
@@ -137,13 +147,14 @@ int main(int argc,char **argv) {
         for(int k = indexToSend; k < indexToSend + BATCHSIZE; k++){
           printf("%lu,",numbers[k]);
         }
-        printf(") to process %d\n", j);
+        printf(") to slave %d\n", j);
         fflush(stdout);
         #endif
 
         MPI_Send(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, j, DATA, MPI_COMM_WORLD);
         indexToSend += BATCHSIZE;
-        counter++;
+        counter[j-1]++;
+        printf("counter status is: (overall/slave): %d/%d\n",sumCounter(counter,nproc), counter[j-1]);
       }
       if(overfed){
         break;
@@ -169,7 +180,7 @@ int main(int argc,char **argv) {
       #endif
       MPI_Isend(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, i, DATA, MPI_COMM_WORLD, &(requests[nproc - 2 + i]));
       indexToSend += BATCHSIZE;
-      counter++;
+      counter[i-1]++;
     }
 
     while(indexToSend < inputArgument){
@@ -177,7 +188,7 @@ int main(int argc,char **argv) {
 
       if(requestCompleted < (nproc - 1)){
         result += resulttemp[requestCompleted];
-        counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
+        counter[requestCompleted]--; // odebralismy wiadomosc i dodalismy ja do wyniku
         #ifdef DEBUG
         printf("Master recieved result:%d from slave:%d, current result: %ld\n", resulttemp[requestCompleted], requestCompleted + 1, result);
         #endif
@@ -200,20 +211,20 @@ int main(int argc,char **argv) {
           memset(lastBatch + remaining, 0, (BATCHSIZE - remaining) * sizeof(unsigned long int));
           
           MPI_Isend(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
-          MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
-          counter++;
+          //MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
+          counter[requestCompleted]++;
           break;
         }
         MPI_Isend(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
 				indexToSend += BATCHSIZE;
-        counter++;
+        counter[requestCompleted]++;
 
         // trzeba wydac odpowiedni kwitek na odebranie wyniku tej wysylki
         MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
       }
     }
     #ifdef DEBUG
-    printf("Master ran out of work to send, %d messages awaiting result\n", counter); 
+    printf("Master ran out of work to send, %d messages awaiting result\n", sumCounter(counter, nproc)); 
     fflush(stdout);
     #endif
 
@@ -221,16 +232,17 @@ int main(int argc,char **argv) {
 
     // odbierz rezultaty od slaveow
     // tu sie dzieje jakies dziwne nadpisywanie, trzeba naprawic
-    while(counter>0){  
+    while(sumCounter(counter, nproc)>0){  
       MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
 
       if(requestCompleted < (nproc - 1)){
         result += resulttemp[requestCompleted];
-        counter--; // odebralismy wiadomosc i dodalismy ja do wyniku
+        counter[requestCompleted]--; // odebralismy wiadomosc i dodalismy ja do wyniku
         #ifdef DEBUG
-        printf("Master recieved result:%d from slave:%d, current result:%ld, wating for %d requests results\n", resulttemp[requestCompleted], requestCompleted + 1, result, counter);
+        printf("Master recieved result:%d from slave:%d, waiting for (overall/slave) messages: (%d, %d)\n",
+           resulttemp[requestCompleted], requestCompleted + 1, sumCounter(counter,nproc), counter[requestCompleted]);
         #endif
-        if(counter>0){        
+        if(counter[requestCompleted]>0){        
           MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
         }
       }
