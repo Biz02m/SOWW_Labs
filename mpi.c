@@ -220,6 +220,7 @@ int main(int argc,char **argv) {
     
 
     // odbierz rezultaty od slaveow
+    // tu sie dzieje jakies dziwne nadpisywanie, trzeba naprawic
     while(counter>0){  
       MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
 
