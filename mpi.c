@@ -163,7 +163,7 @@ int main(int argc,char **argv) {
 
     // zaczynamy odbierac juz 
     for(int i = 1; i < nproc; i++){
-      MPI_Irecv (&(resulttemp[i-1]), 1, MPI_UNSIGNED_LONG, i, RESULT, MPI_COMM_WORLD, &(reciv_requests[i-1]));
+      MPI_Irecv (&(resulttemp[i-1]), 1, MPI_INT, i, RESULT, MPI_COMM_WORLD, &(reciv_requests[i-1]));
     }
 
     // odpalamy wysylke 
@@ -209,7 +209,7 @@ int main(int argc,char **argv) {
         memset(lastBatch + remaining, 0, (BATCHSIZE - remaining) * sizeof(unsigned long int));
           
         MPI_Isend(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(send_requests[requestCompleted]));
-        MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[requestCompleted]));
+        MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_INT, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[requestCompleted]));
         counter[requestCompleted]++;
         break;
       }
@@ -219,7 +219,7 @@ int main(int argc,char **argv) {
       counter[requestCompleted]++;
 
       // trzeba wydac odpowiedni kwitek na odebranie wyniku tej wysylki
-      MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[requestCompleted]));
+      MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_INT, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[requestCompleted]));
     }
     #ifdef DEBUG
     printf("Master ran out of work to send, %d messages awaiting result\n", sumCounter(counter, nproc)); 
@@ -229,7 +229,23 @@ int main(int argc,char **argv) {
     
 
     // odbierz rezultaty od slaveow
-    // tu sie dzieje jakies dziwne nadpisywanie, trzeba naprawic
+    //sposob blokujacy do debugowania
+    // for(int i = 0; i < nproc - 1; i++){
+    //   while(counter[i]>0){
+    //     MPI_Wait(&(reciv_requests[i]), MPI_STATUS_IGNORE);
+    //     result += resulttemp[i];
+    //     counter[i]--; // odebralismy wiadomosc i dodalismy ja do wyniku
+    //     #ifdef DEBUG
+    //     printf("Master recieved result:%d from slave:%d, waiting for (overall/slave) messages: (%d, %d)\n",
+    //        resulttemp[i], i + 1, sumCounter(counter,nproc), counter[i]);
+    //     #endif
+    //     if(counter[i] > 0){
+    //       MPI_Irecv(&(resulttemp[i]), 1, MPI_INT, i + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[i]));
+    //     } 
+    //   }
+    // }
+
+    // sposob nieblokujacy
     while(sumCounter(counter, nproc)>0){  
       MPI_Waitany (nproc-1, reciv_requests, &requestCompleted, MPI_STATUS_IGNORE);
 
@@ -240,7 +256,7 @@ int main(int argc,char **argv) {
          resulttemp[requestCompleted], requestCompleted + 1, sumCounter(counter,nproc), counter[requestCompleted]);
       #endif
       if(counter[requestCompleted]>0){       
-        MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[requestCompleted]));  
+        MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_INT, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(reciv_requests[requestCompleted]));  
       }
       else {
         reciv_requests[requestCompleted] = MPI_REQUEST_NULL;
@@ -249,9 +265,9 @@ int main(int argc,char **argv) {
 
     // wysylamy sygnal stop do slaveow
     unsigned long int finishSignaltmp = 0;
-    for(int i = 0; i < nproc - 1; i++){
-      MPI_Wait (&(send_requests[i]), MPI_STATUS_IGNORE);
-      MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(send_requests[i]));
+    for(int i = 1; i < nproc; i++){
+      MPI_Wait (&(send_requests[i-1]), MPI_STATUS_IGNORE);
+      MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(send_requests[i-1]));
     }
 
     #ifdef DEBUG
@@ -340,7 +356,7 @@ int main(int argc,char **argv) {
           #ifdef DEBUG
           printf("Slave:%d sending result: %d\n", myrank, resulttemp);
           #endif
-          MPI_Isend(&resulttemp, 1, MPI_UNSIGNED_LONG, 0, RESULT, MPI_COMM_WORLD, &send_req);
+          MPI_Isend(&resulttemp, 1, MPI_INT, 0, RESULT, MPI_COMM_WORLD, &send_req);
           send_ready = 0; //wlasnie wyslalismy paczke, nie mozemy wysylac dalej
         }
 
