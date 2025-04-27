@@ -97,6 +97,7 @@ int main(int argc,char **argv) {
     memset(counter, 0, (nproc -1 ) * sizeof(int));
     requests = (MPI_Request *) malloc (3 * (nproc - 1) * sizeof(MPI_Request));
     resulttemp = (int *) malloc((nproc - 1) * sizeof(int));
+    lastBatch = (unsigned long int*) malloc((BATCHSIZE)*sizeof(unsigned long int));
     
     if (!requests || !resulttemp){
       printf ("\nNot enough memory");
@@ -118,7 +119,6 @@ int main(int argc,char **argv) {
           printf("Master ran out of work during overfeeding\n");
           int remaining = inputArgument - indexToSend;
           if(remaining > 0){
-            lastBatch = (unsigned long int*) malloc((BATCHSIZE)*sizeof(unsigned long int));
             //skopiuj pozostale dane
             memcpy(lastBatch, &numbers[indexToSend], remaining * sizeof(unsigned long int));
             // for(int k = 0; k < remaining; k++, indexToSend++){
@@ -167,21 +167,21 @@ int main(int argc,char **argv) {
     }
 
     // odpalamy wysylke 
-    for(int i = 1; i < nproc; i++){
-      //trzeba sprawdzic czy nie wysylamy za duzo 
-      if(overfed == 1){
-        printf("Master has no work left to send, sleeping\n");
-        break;
-      }
+    // for(int i = 1; i < nproc; i++){
+    //   //trzeba sprawdzic czy nie wysylamy za duzo 
+    //   if(overfed == 1){
+    //     printf("Master has no work left to send, sleeping\n");
+    //     break;
+    //   }
 
-      #ifdef DEBUG
-      printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, i);
-      fflush(stdout);
-      #endif
-      MPI_Isend(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, i, DATA, MPI_COMM_WORLD, &(requests[nproc - 2 + i]));
-      indexToSend += BATCHSIZE;
-      counter[i-1]++;
-    }
+    //   #ifdef DEBUG
+    //   printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, i);
+    //   fflush(stdout);
+    //   #endif
+    //   MPI_Isend(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, i, DATA, MPI_COMM_WORLD, &(requests[nproc - 2 + i]));
+    //   indexToSend += BATCHSIZE;
+    //   counter[i-1]++;
+    // }
 
     while(indexToSend < inputArgument){
       MPI_Waitany (2 * nproc - 2, requests, &requestCompleted, MPI_STATUS_IGNORE);
@@ -206,12 +206,11 @@ int main(int argc,char **argv) {
           printf("Master has last incomplete batch to send, padding will be used\n");
           #endif
           int remaining = inputArgument - indexToSend;
-          lastBatch = malloc((BATCHSIZE) * sizeof(unsigned long int));
           memcpy(lastBatch, &numbers[indexToSend], remaining * sizeof(unsigned long int));
           memset(lastBatch + remaining, 0, (BATCHSIZE - remaining) * sizeof(unsigned long int));
           
           MPI_Isend(lastBatch, BATCHSIZE, MPI_UNSIGNED_LONG, requestCompleted + 1, DATA, MPI_COMM_WORLD, &(requests[nproc - 1 + requestCompleted]));
-          //MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
+          MPI_Irecv(&(resulttemp[requestCompleted]), 1, MPI_UNSIGNED_LONG, requestCompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestCompleted]));
           counter[requestCompleted]++;
           break;
         }
@@ -271,7 +270,7 @@ int main(int argc,char **argv) {
     free(lastBatch);
   }
   else { //-----------SLAVE-----------
-    MPI_Request recv_req, send_req;
+    MPI_Request recv_req = MPI_REQUEST_NULL, send_req = MPI_REQUEST_NULL;
     MPI_Status recv_status, send_status;
     int resulttemp;
     unsigned long int* batch = (unsigned long int *) malloc(BATCHSIZE * sizeof(unsigned long int));
