@@ -9,7 +9,7 @@
 #define RESULT 1
 #define FINISH 2
 #define BATCHSIZE 10
-#define DEBUG
+//#define DEBUG
 #define FEED 4
 
 int isPrime(unsigned long int n) {
@@ -63,14 +63,13 @@ int main(int argc,char **argv) {
   if(!myrank){
       	gettimeofday(&ins__tstart, NULL);
 	numbers = (unsigned long int*)malloc(inputArgument * sizeof(unsigned long int));
-  	//numgen(inputArgument, numbers);
-    for(int i = 0; i < inputArgument; i++){
-      numbers[i] = i;
-    }
+  	numgen(inputArgument, numbers);
+    // for(int i = 0; i < inputArgument; i++){
+    //   numbers[i] = i;
+    // }
   }
 
   // run your computations here (including MPI communication)
-  // Kroki wyjasnione przez mata
   // 1. Nakarmienie/przekarmienie slaveow - czyli wysylamy np do kazdego slave poczatkowo 5 paczek danych
   //  kazdy z ktorych bedzie juz przez mpiaja zakolejkowany. Kazal na to patrzec w taki sposob ze mamy np 100 kartek
   //  do korekty i sale ludzi (slaveow XD). kazdemu na sali rozdajemy poczatkowo po 3 lub 4 czy ilekolwiek kartek na start zeby zaczeli pracowac
@@ -165,23 +164,6 @@ int main(int argc,char **argv) {
     for(int i = 1; i < nproc; i++){
       MPI_Irecv (&(resulttemp[i-1]), 1, MPI_INT, i, RESULT, MPI_COMM_WORLD, &(reciv_requests[i-1]));
     }
-
-    // odpalamy wysylke 
-    // for(int i = 1; i < nproc; i++){
-    //   //trzeba sprawdzic czy nie wysylamy za duzo 
-    //   if(overfed == 1){
-    //     printf("Master has no work left to send, sleeping\n");
-    //     break;
-    //   }
-
-    //   #ifdef DEBUG
-    //   printf("Master sending batch [%d, %d] to process %d\n", indexToSend, indexToSend + BATCHSIZE, i);
-    //   fflush(stdout);
-    //   #endif
-    //   MPI_Isend(&(numbers[indexToSend]), BATCHSIZE, MPI_UNSIGNED_LONG, i, DATA, MPI_COMM_WORLD, &(requests[nproc - 2 + i]));
-    //   indexToSend += BATCHSIZE;
-    //   counter[i-1]++;
-    // }
 
     while(indexToSend < inputArgument){
       MPI_Waitany (nproc - 1, reciv_requests, &requestCompleted, MPI_STATUS_IGNORE);
@@ -294,7 +276,6 @@ int main(int argc,char **argv) {
     free(lastBatch);
   }
   else { //-----------SLAVE-----------
-    //slavea chyba powroce do formy troche blokujacej bo chyba overkill
     MPI_Request recv_req = MPI_REQUEST_NULL, send_req = MPI_REQUEST_NULL;
     MPI_Status recv_status, send_status;
     int resulttemp;
@@ -377,7 +358,9 @@ int main(int argc,char **argv) {
     if(send_ready == 0){
       MPI_Wait(&send_req, &send_status);
     }
+    #ifdef DEBUG
     printf("Slave:%d is stopping\n",myrank);
+    #endif
     free(batch);
   }
 
