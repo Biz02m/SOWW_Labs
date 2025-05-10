@@ -1,6 +1,7 @@
 MPICC=mpicc
 CFLAGS=-O2
 LIBS=-lm
+OMPFLAGS=-fopenmp
 
 ifeq (run,$(firstword $(MAKECMDGOALS)))
   # use the rest as arguments for "run"
@@ -10,11 +11,11 @@ ifeq (run,$(firstword $(MAKECMDGOALS)))
 endif
 
 
-main: mpi.c
-	${MPICC} ${CFLAGS} $< -o mpi ${LIBS}
+main: openmp.c
+	${CC} ${CFLAGS} ${OMPFLAGS} $< -o openmp ${LIBS}
 
 run:
-	mpirun -np 4 ./mpi $(RUN_ARGS)
+	./openmp $(RUN_ARGS)
 
 clean:
-	rm mpi
+	rm openmp
