@@ -11,7 +11,7 @@
 #define FINISH 2
 #define PARTIAL 3
 #define BATCHSIZE 10
-#define DEBUG
+//#define DEBUG
 #define FEED 4
 
 int isPrime(unsigned long int n) {
@@ -76,6 +76,7 @@ int main(int argc,char **argv) {
 
   unsigned long int result = 0; 
   if(myrank == 0 ){
+    printf("nproc is %d", nproc);
     MPI_Request *send_requests;
     MPI_Request *reciv_requests;
     MPI_Status status;
@@ -194,23 +195,8 @@ int main(int argc,char **argv) {
       MPI_Isend(&finishSignaltmp, 1, MPI_UNSIGNED_LONG, i, FINISH, MPI_COMM_WORLD, &(send_requests[i-1]));
     }
 
-    #ifdef DEBUG
-    int done;
-    for(int i = 0; i < nproc - 1; i++){
-      done = 0;
-      MPI_Test(&send_requests[i], &done, MPI_STATUSES_IGNORE);
-      printf("send_requests: %d status is: %d\n", i, done);
-    }
-    for(int i = 0; i < nproc - 1; i++){
-      done = 0;
-      MPI_Test(&reciv_requests[i], &done, MPI_STATUSES_IGNORE);
-      printf("reciv_requests: %d status is: %d\n", i, done);
-    }
-    #endif
-
     MPI_Waitall(nproc - 1 , send_requests, MPI_STATUSES_IGNORE);
-    MPI_Waitall(nproc - 1, reciv_requests, MPI_STATUSES_IGNORE);
-
+    
     printf("Master recieved all results from slaves, the result is: %ld\n", result);
     free(send_requests);
     free(reciv_requests);
