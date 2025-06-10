@@ -1,6 +1,5 @@
-MPICC=mpicc
-CFLAGS=-O2
-LIBS=-lm
+NVCC=nvcc
+CUDAFLAGS=-arch=sm_35
 
 ifeq (run,$(firstword $(MAKECMDGOALS)))
   # use the rest as arguments for "run"
@@ -10,11 +9,11 @@ ifeq (run,$(firstword $(MAKECMDGOALS)))
 endif
 
 
-main: mpi.c
-	${MPICC} ${CFLAGS} $< -o mpi ${LIBS}
+main: cuda.cu
+	${NVCC} ${CUDAFLAGS} $< -o cuda
 
 run:
-	mpirun -np 4 ./mpi $(RUN_ARGS)
+	./cuda $(RUN_ARGS)
 
 clean:
-	rm mpi
+	rm cuda
